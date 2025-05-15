@@ -1,6 +1,6 @@
 # Parkinson's Disease Prediction Project
 
-This project uses machine learning to predict Parkinson's disease based on vocal features, such as voice frequency and amplitude. It includes a user-friendly web interface built with Streamlit and a backend server powered by Flask, designed for your PFE presentation.
+This project uses machine learning to predict Parkinson's disease based on vocal features, such as voice frequency and amplitude. It includes a user-friendly web interface built with Streamlit and a backend server powered by Flask.
 
 ## Table of Contents
 
@@ -114,5 +114,3 @@ The application offers two ways to input data for prediction:
 
 - **Global Feature Importance**:
   - At the bottom, a SHAP summary plot shows which vocal features are most important overall for predicting Parkinson's, helping you understand what matters most.
-
-For your PFE presentation, practice using both input methods to demonstrate the application's capabilities to your audience.
