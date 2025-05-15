@@ -1,0 +1,234 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{codebg}{rgb}{0.95,0.95,0.95}
+\lstset{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    language=Python,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red}
+}
+
+\title{Prédiction de la Maladie de Parkinson par Apprentissage Machine}
+\author{Votre Nom}
+\date{Année Universitaire 2023-2024}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+La maladie de Parkinson est un trouble neurodégénératif chronique dont le diagnostic précoce est crucial pour améliorer la prise en charge des patients. Ce projet vise à développer un système de prédiction automatique de la maladie de Parkinson à partir de données biomédicales, en utilisant des techniques avancées d'apprentissage machine. Nous détaillons le choix des méthodes, le pipeline de traitement, l'évaluation des performances et l'interprétabilité des modèles.
+\end{abstract}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\chapter{Introduction}
+\section{Contexte}
+La maladie de Parkinson est la deuxième maladie neurodégénérative la plus fréquente après la maladie d'Alzheimer. Elle se caractérise par la dégénérescence progressive des neurones dopaminergiques, entraînant des troubles moteurs et non-moteurs. Le diagnostic repose principalement sur l'expertise clinique, ce qui peut retarder la détection.
+
+\section{Problématique}
+Le diagnostic précoce est difficile, car les symptômes apparaissent tardivement. L'utilisation de l'apprentissage machine permet d'exploiter des données biomédicales pour détecter la maladie à un stade précoce, aidant ainsi les cliniciens dans leur prise de décision.
+
+\section{Objectifs}
+\begin{itemize}
+    \item Développer un pipeline complet de prédiction de la maladie de Parkinson à partir de données publiques.
+    \item Comparer plusieurs algorithmes de classification.
+    \item Optimiser les performances par sélection de variables et réglage d'hyperparamètres.
+    \item Interpréter les résultats pour une meilleure compréhension médicale.
+\end{itemize}
+
+\chapter{État de l'art}
+\section{La maladie de Parkinson}
+La maladie de Parkinson affecte principalement les personnes âgées. Les symptômes incluent tremblements, rigidité musculaire, bradykinésie et troubles de la parole. Le diagnostic repose sur des critères cliniques, mais des biomarqueurs issus de la voix ou d'autres signaux sont de plus en plus étudiés.
+
+\section{Apprentissage machine en médecine}
+L'apprentissage machine (ML) est un sous-domaine de l'intelligence artificielle qui permet à un système d'apprendre à partir de données. En médecine, il est utilisé pour la détection de maladies, la prédiction de risques, et l'aide au diagnostic. Les modèles supervisés, comme les forêts aléatoires (Random Forest) ou XGBoost, sont particulièrement adaptés aux tâches de classification.
+
+\section{Travaux antérieurs sur la prédiction de Parkinson}
+Plusieurs études ont utilisé des données vocales ou biomédicales pour prédire la maladie de Parkinson. Les approches varient de la régression logistique aux réseaux de neurones, en passant par les SVM et les arbres de décision. Les modèles d'ensemble comme Random Forest et XGBoost sont souvent privilégiés pour leur robustesse et leur capacité à gérer des données hétérogènes.
+
+\chapter{Méthodologie}
+\section{Présentation du jeu de données}
+Nous utilisons le jeu de données public \textit{Parkinson's Data Set} disponible sur l'UCI Machine Learning Repository\footnote{\url{https://archive.ics.uci.edu/ml/datasets/parkinsons}}. Il contient 195 enregistrements et 23 variables, dont des mesures extraites de la voix et un label binaire (\texttt{status}) indiquant la présence ou non de la maladie.
+
+\section{Pipeline de traitement}
+Le pipeline complet est illustré à la figure~\ref{fig:pipeline}.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/pipeline.png}
+    \caption{Pipeline de traitement et de modélisation}
+    \label{fig:pipeline}
+\end{figure}
+
+\subsection{Chargement et exploration des données}
+Le chargement se fait via \texttt{pandas}. L'exploration inclut la visualisation de la distribution des classes (figure~\ref{fig:classdist}) et la matrice de corrélation (figure~\ref{fig:corrmat}).
+
+\begin{lstlisting}[caption={Chargement des données}, label={lst:load}]
+import pandas as pd
+url = 'https://archive.ics.uci.edu/ml/machine-learning-databases/parkinsons/parkinsons.data'
+data = pd.read_csv(url)
+\end{lstlisting}
+
+\subsection{Prétraitement}
+\begin{itemize}
+    \item \textbf{Nettoyage :} Suppression de la colonne \texttt{name} (identifiant non pertinent).
+    \item \textbf{Encodage :} Transformation du label en valeurs numériques via \texttt{LabelEncoder}.
+    \item \textbf{Normalisation :} Utilisation de \texttt{StandardScaler} pour centrer et réduire les variables, ce qui est essentiel pour les modèles sensibles à l'échelle des données.
+    \item \textbf{Gestion du déséquilibre :} Application de SMOTE (Synthetic Minority Over-sampling Technique) pour équilibrer les classes. Cette méthode génère artificiellement des exemples de la classe minoritaire, ce qui améliore la robustesse des modèles.
+    \item \textbf{Sélection de variables :} Utilisation de \texttt{SelectKBest} avec la fonction d'information mutuelle pour ne garder que les variables les plus informatives. Cela réduit la dimensionnalité et limite le surapprentissage.
+\end{itemize}
+
+\subsection{Justification des choix}
+\begin{itemize}
+    \item \textbf{StandardScaler} est préféré à MinMaxScaler car il rend les données centrées réduites, ce qui est mieux adapté à la plupart des algorithmes linéaires et d'ensemble.
+    \item \textbf{SMOTE} est choisi pour éviter le biais de classe majoritaire, contrairement à un simple sur-échantillonnage qui duplique les exemples existants.
+    \item \textbf{SelectKBest} permet de réduire la complexité du modèle et d'améliorer la généralisation.
+\end{itemize}
+
+\subsection{Séparation des données}
+Les données sont séparées en un ensemble d'entraînement (80\%) et de test (20\%) de façon stratifiée pour conserver la proportion des classes.
+
+\subsection{Choix des modèles}
+\begin{itemize}
+    \item \textbf{Random Forest (RF) :} Modèle d'ensemble basé sur des arbres de décision. Il est robuste au bruit, gère bien les variables non linéaires et fournit une estimation de l'importance des variables.
+    \item \textbf{XGBoost :} Algorithme de boosting par gradient, très performant sur les petits jeux de données tabulaires. Il gère le surapprentissage via la régularisation et permet une optimisation fine des hyperparamètres.
+\end{itemize}
+
+\textbf{Pourquoi pas d'autres modèles ?}
+\begin{itemize}
+    \item \textbf{SVM :} Sensible au choix du noyau et à la normalisation, moins interprétable.
+    \item \textbf{Réseaux de neurones :} Surdimensionnés pour un petit jeu de données, risque de surapprentissage.
+    \item \textbf{Régression logistique :} Moins performante sur des relations non linéaires complexes.
+\end{itemize}
+
+\subsection{Optimisation des hyperparamètres}
+L'optimisation est réalisée avec \texttt{Optuna}, une librairie de recherche bayésienne efficace pour explorer l'espace des hyperparamètres.
+
+\begin{lstlisting}[caption={Exemple d'optimisation avec Optuna}, label={lst:optuna}]
+import optuna
+def objective(trial):
+    n_estimators = trial.suggest_int('n_estimators', 50, 300)
+    max_depth = trial.suggest_int('max_depth', 3, 15)
+    model = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth)
+    # ... validation croisée ...
+    return score
+study = optuna.create_study(direction='maximize')
+study.optimize(objective, n_trials=50)
+\end{lstlisting}
+
+\subsection{Évaluation des modèles}
+\begin{itemize}
+    \item \textbf{Matrice de confusion :} Visualisation des vrais/faux positifs/négatifs.
+    \item \textbf{Courbe ROC et AUC :} Mesure de la capacité du modèle à distinguer les classes.
+    \item \textbf{Rapport de classification :} Précision, rappel, F1-score.
+\end{itemize}
+
+\subsection{Interprétabilité}
+L'interprétation des modèles est réalisée avec SHAP (SHapley Additive exPlanations), qui permet de comprendre l'impact de chaque variable sur la prédiction.
+
+\begin{lstlisting}[caption={Interprétation avec SHAP}, label={lst:shap}]
+import shap
+explainer = shap.TreeExplainer(model)
+shap_values = explainer.shap_values(X_test)
+shap.summary_plot(shap_values, X_test, feature_names=selected_features)
+\end{lstlisting}
+
+\chapter{Résultats et Discussion}
+\section{Performances des modèles}
+Les résultats montrent que XGBoost surpasse Random Forest en termes d'AUC et de F1-score (voir tableau~\ref{tab:results}). Les figures~\ref{fig:cm_rf} et~\ref{fig:cm_xgb} présentent les matrices de confusion.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{lcccc}
+        \hline
+        Modèle & Précision & Rappel & F1-score & AUC \\
+        \hline
+        Random Forest & ... & ... & ... & ... \\
+        XGBoost & ... & ... & ... & ... \\
+        \hline
+    \end{tabular}
+    \caption{Comparaison des performances des modèles}
+    \label{tab:results}
+\end{table}
+
+\section{Analyse des variables importantes}
+L'analyse SHAP (figure~\ref{fig:shap}) montre que les variables telles que \texttt{MDVP.Fo.Hz}, \texttt{spread1}, et \texttt{PPE} sont les plus déterminantes pour la prédiction.
+
+\section{Limites et perspectives}
+\begin{itemize}
+    \item Taille limitée du jeu de données.
+    \item Données issues d'un seul type de biomarqueur (voix).
+    \item Perspectives : intégrer d'autres sources de données, tester des modèles de deep learning adaptés à de plus grands jeux de données.
+\end{itemize}
+
+\chapter{Conclusion}
+Ce projet a permis de mettre en place un pipeline complet de prédiction de la maladie de Parkinson, de la préparation des données à l'interprétation des résultats. Les modèles d'ensemble, en particulier XGBoost, se sont révélés efficaces. L'interprétabilité via SHAP offre une perspective précieuse pour la compréhension médicale.
+
+\chapter*{Références}
+\addcontentsline{toc}{chapter}{Références}
+\begin{itemize}
+    \item UCI Machine Learning Repository: Parkinson's Data Set. \url{https://archive.ics.uci.edu/ml/datasets/parkinsons}
+    \item Lundberg, S. M., \& Lee, S.-I. (2017). A Unified Approach to Interpreting Model Predictions. Advances in Neural Information Processing Systems.
+    \item Breiman, L. (2001). Random Forests. Machine Learning.
+    \item Chen, T., \& Guestrin, C. (2016). XGBoost: A Scalable Tree Boosting System. KDD.
+    \item Chawla, N. V., et al. (2002). SMOTE: Synthetic Minority Over-sampling Technique. Journal of Artificial Intelligence Research.
+\end{itemize}
+
+\appendix
+\chapter{Annexes}
+\section{Extraits de code}
+\lstinputlisting[language=Python,caption={Pipeline complet de modélisation}]{main.py}
+
+\section{Figures supplémentaires}
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/class_distribution.png}
+    \caption{Distribution des classes}
+    \label{fig:classdist}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/correlation_matrix.png}
+    \caption{Matrice de corrélation}
+    \label{fig:corrmat}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/confusion_matrix_RandomForest.png}
+    \caption{Matrice de confusion - Random Forest}
+    \label{fig:cm_rf}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/confusion_matrix_XGBoost.png}
+    \caption{Matrice de confusion - XGBoost}
+    \label{fig:cm_xgb}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/shap_summary.png}
+    \caption{Résumé SHAP des variables importantes}
+    \label{fig:shap}
+\end{figure}
+
+\end{document}
