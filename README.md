@@ -82,12 +82,11 @@ Ce projet propose un pipeline complet pour la détection précoce de la maladie 
 ---
 
 ## 📊 Exemples de figures générées
-  Distribution des classes
-class_distribution.pngMatrice de corrélation
-correlation_matrix.pngMatrice de confusion
-confusion_matrix_XGBoost.pngCourbe ROC
-roc_curve_XGBoost.pngRésumé SHAP
-shap_summary_XGBoost.png
+  Distribution des classes : class_distribution.png
+  Matrice de corrélation : correlation_matrix.png
+  Matrice de confusion : confusion_matrix_XGBoost.png
+  Courbe ROC : roc_curve_XGBoost.png
+  Résumé SHAP : shap_summary_XGBoost.png
    
 ---
 
@@ -105,4 +104,5 @@ shap_summary_XGBoost.png
 
 ## 💡 Remarques
   º Pour toute question ou bug, ouvrir une issue sur GitHub ou contacter elmoufannaneyahya006@gmail.com 
+  
   º Ce projet a été réalisé dans le cadre d’un PFE Licence Mathématiques Appliquées pour l’Intelligence Machine.
