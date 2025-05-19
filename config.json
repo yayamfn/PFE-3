@@ -1,0 +1,5 @@
+{
+    "selected_model_key": "Random Forest",
+    "k_best_for_shap": 10,
+    "show_shap": true
+}
