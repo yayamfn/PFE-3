@@ -229,8 +229,8 @@ def app():
         """
         <hr>
         <div style='text-align:center;color:gray;font-size:0.9em;'>
-            Application développée par <b>Votre Nom</b> – Version 0.3<br>
-            Contact : <a href='mailto:votre.email@example.com'>votre.email@example.com</a>
+            Application développée par <b>El moufannane Yahya</b> – Version 0.4<br>
+            Contact : <a href='mailto:yahya.elmoufannane@ump.ac.ma'>yahya.elmoufannane@ump.ac.ma</a>
         </div>
         """,
         unsafe_allow_html=True
