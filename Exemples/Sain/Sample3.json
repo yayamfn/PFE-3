@@ -1,0 +1,5 @@
+{
+  "Jitter(%)": 0.0081, "Jitter(Abs)": 0.00006375, "Jitter:RAP": 0.00418, "Jitter:PPQ5": 0.00457, "Jitter:DDP": 0.01253,
+  "Shimmer": 0.04927, "Shimmer(dB)": 0.405, "Shimmer:APQ3": 0.02715, "Shimmer:APQ5": 0.02974, "Shimmer:APQ11": 0.03218,
+  "Shimmer:DDA": 0.08144, "NHR": 0.026285, "HNR": 18.254, "RPDE": 0.48799, "DFA": 0.76679, "PPE": 0.22277
+}

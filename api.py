@@ -88,11 +88,8 @@ def predict():
 
         response = {'prediction': prediction_result}
         if hasattr(model, 'predict_proba'):
-            proba_all_classes = model.predict_proba(X_selected)[0]
-            probability_of_predicted_class = proba_all_classes[prediction_result]
-            probability_of_parkinsons = proba_all_classes[1] if len(proba_all_classes) > 1 else probability_of_predicted_class
-            
-            response['probability_predicted_class'] = float(probability_of_predicted_class)
+            proba_all = model.predict_proba(X_selected)[0]
+            probability_of_parkinsons = proba_all[1] if len(proba_all) > 1 else proba_all[0]
             response['probability_parkinsons'] = float(probability_of_parkinsons)
         
         return jsonify(response)
@@ -102,7 +99,4 @@ def predict():
         return jsonify({'error': 'Erreur interne du serveur. Veuillez contacter l\'administrateur.'}), 500
 
 if __name__ == '__main__':
-    if model is None or scaler is None or selector is None or not feature_names:
-        logger.warning("L'API démarre, mais les actifs du modèle ne sont pas chargés. Les prédictions échoueront.")
-    logger.info("Démarrage de l'application Flask sur http://0.0.0.0:5000")
     app.run(host='0.0.0.0', port=5000, debug=False)

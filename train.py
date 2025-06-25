@@ -46,22 +46,20 @@ def convert_numpy_types_to_native(obj):
         return [convert_numpy_types_to_native(i) for i in obj]
     return obj
 
-def load_data(url):
+def load_data(filepath):
     """
-    Load the Parkinson's dataset from the given URL.
-
-    Parameters:
-    url (str): URL to the dataset.
-
-    Returns:
-    X (pd.DataFrame): Features.
-    y (np.array): Target variable.
-    le (LabelEncoder): Label encoder for the target.
+    Load the Parkinson's dataset from a local CSV (parkinsons_updrs.csv) and create a binary status column.
     """
     try:
-        data = pd.read_csv(url)
-        logger.info("Dataset loaded successfully.")
-        X = data.drop(columns=['name', 'status'])
+        data = pd.read_csv(filepath)
+        # Créer la colonne status (1 = malade, 0 = non malade) selon un seuil sur motor_UPDRS
+        seuil = 20  # À ajuster selon la distribution
+        data['status'] = (data['motor_UPDRS'] > seuil).astype(int)
+        logger.info(f"Distribution de la colonne status : {data['status'].value_counts().to_dict()}")
+
+        # Sélectionner les colonnes features (ici, toutes sauf les colonnes non vocales et la cible)
+        features_to_drop = ['subject#', 'age', 'sex', 'test_time', 'motor_UPDRS', 'total_UPDRS', 'status']
+        X = data.drop(columns=features_to_drop)
         y_original = data['status']
         le = LabelEncoder()
         y = le.fit_transform(y_original.astype(int))
@@ -162,6 +160,12 @@ def preprocess_data(X, y, k_best=10):
         selected_feature_indices = selector.get_support(indices=True)
         selected_feature_names = X.columns[selected_feature_indices].tolist()
         logger.info("Features sélectionnées: %s", selected_feature_names)
+
+        # Affichage des scores d'information mutuelle pour les 10 variables sélectionnées
+        mi_scores = selector.scores_[selected_feature_indices]
+        logger.info("Top 10 variables sélectionnées par SelectKBest et leur score d'information mutuelle :")
+        for name, score in zip(selected_feature_names, mi_scores):
+            logger.info(f"{name}: {score:.4f}")
 
         return X_train_selected, X_test_selected, y_train_smote, y_test, scaler, selector, X_test_original
     except Exception as e:
@@ -427,13 +431,11 @@ def save_assets(model_xgb, model_rf, scaler, selector, original_feature_names):
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore", message="Parameters: { \"use_label_encoder\" } are not used.", category=UserWarning, module="xgboost.training")
-    
-    warnings.filterwarnings("ignore", message="Using categorical units to plot a list of strings that are all parsable as floats or dates.", category=UserWarning, module="matplotlib.category")
-
+    warnings.filterwarnings("ignore", message="Using categorical units to plot a list of strings that are all parsable as floats or dates.", category=UserWarning)
 
     logger.info("Début du script d'entraînement...")
 
-    DATA_URL = 'https://archive.ics.uci.edu/ml/machine-learning-databases/parkinsons/parkinsons.data'
+    DATA_URL = 'parkinsons_updrs.csv'
     K_BEST_FEATURES = 10
 
     X_original, y_encoded, label_encoder = load_data(DATA_URL)
@@ -454,6 +456,11 @@ if __name__ == '__main__':
 
     selected_feature_indices = feature_selector.get_support(indices=True)
     selected_feature_names_list = X_original.columns[selected_feature_indices].tolist()
+    # Affichage des scores d'information mutuelle pour les 10 variables sélectionnées
+    mi_scores = feature_selector.scores_[selected_feature_indices]
+    logger.info("Top 10 variables sélectionnées par SelectKBest et leur score d'information mutuelle :")
+    for name, score in zip(selected_feature_names_list, mi_scores):
+        logger.info(f"{name}: {score:.4f}")
     interpret_model(model_xgb_optimized, X_test_processed, selected_feature_names_list, model_name='XGBoost')
 
     run_internal_tests(model_xgb_optimized, X_test_original_df, y_test_processed, 

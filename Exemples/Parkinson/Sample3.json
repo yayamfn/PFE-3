@@ -1,24 +1,5 @@
 {
-  "MDVP:Fo(Hz)": 145.207,
-  "MDVP:Fhi(Hz)": 161.116,
-  "MDVP:Flo(Hz)": 65.768,
-  "MDVP:Jitter(%)": 0.01075,
-  "MDVP:Jitter(Abs)": 0.00007,
-  "MDVP:RAP": 0.00544,
-  "MDVP:PPQ": 0.00711,
-  "Jitter:DDP": 0.01633,
-  "MDVP:Shimmer": 0.06515,
-  "MDVP:Shimmer(dB)": 0.629,
-  "Shimmer:APQ3": 0.03527,
-  "Shimmer:APQ5": 0.04192,
-  "MDVP:APQ": 0.05197,
-  "Shimmer:DDA": 0.10581,
-  "NHR": 0.03157,
-  "HNR": 19.447,
-  "RPDE": 0.469928,
-  "DFA": 0.751674,
-  "spread1": -5.263968,
-  "spread2": 0.265473,
-  "D2": 2.751843,
-  "PPE": 0.286486
+  "Jitter(%)": 0.003, "Jitter(Abs)": 0.0000168, "Jitter:RAP": 0.00132, "Jitter:PPQ5": 0.0015, "Jitter:DDP": 0.00395,
+  "Shimmer": 0.02024, "Shimmer(dB)": 0.179, "Shimmer:APQ3": 0.00994, "Shimmer:APQ5": 0.01072, "Shimmer:APQ11": 0.01689,
+  "Shimmer:DDA": 0.02982, "NHR": 0.011112, "HNR": 27.183, "RPDE": 0.43493, "DFA": 0.56477, "PPE": 0.1081
 }

@@ -37,51 +37,38 @@ MODEL_FILES = {
 }
 
 FEATURE_DESCRIPTIONS = {
-    "MDVP:Fo(Hz)": "Fréquence vocale fondamentale moyenne (Hz)",
-    "MDVP:Fhi(Hz)": "Fréquence vocale fondamentale maximale (Hz)",
-    "MDVP:Flo(Hz)": "Fréquence vocale fondamentale minimale (Hz)",
-    "MDVP:Jitter(%)": "Variation relative de la fréquence fondamentale (Jitter %)",
-    "MDVP:Jitter(Abs)": "Variation absolue de la fréquence fondamentale (Jitter Abs)",
-    "MDVP:RAP": "Relative Average Perturbation (RAP)",
-    "MDVP:PPQ": "Pitch Period Perturbation Quotient (PPQ)",
+    "Jitter(%)": "Variation relative de la fréquence fondamentale (Jitter %)",
+    "Jitter(Abs)": "Variation absolue de la fréquence fondamentale (Jitter Abs)",
+    "Jitter:RAP": "Relative Average Perturbation (RAP)",
+    "Jitter:PPQ5": "Pitch Period Perturbation Quotient (PPQ5)",
     "Jitter:DDP": "Difference of Differences of Periods (DDP)",
-    "MDVP:Shimmer": "Variation relative de l'amplitude (Shimmer)",
-    "MDVP:Shimmer(dB)": "Variation de l'amplitude en décibels (Shimmer dB)",
+    "Shimmer": "Variation relative de l'amplitude (Shimmer)",
+    "Shimmer(dB)": "Variation de l'amplitude en décibels (Shimmer dB)",
     "Shimmer:APQ3": "Amplitude Perturbation Quotient (3 cycles)",
     "Shimmer:APQ5": "Amplitude Perturbation Quotient (5 cycles)",
-    "MDVP:APQ": "Amplitude Perturbation Quotient (MDVP APQ)",
+    "Shimmer:APQ11": "Amplitude Perturbation Quotient (11 cycles)",
     "Shimmer:DDA": "Difference of Differences of Amplitude (DDA)",
     "NHR": "Noise-to-Harmonics Ratio (NHR)",
     "HNR": "Harmonics-to-Noise Ratio (HNR)",
     "RPDE": "Recurrence Period Density Entropy (RPDE)",
     "DFA": "Detrended Fluctuation Analysis (DFA)",
-    "spread1": "Nonlinear measure of fundamental frequency variation 1",
-    "spread2": "Nonlinear measure of fundamental frequency variation 2",
-    "D2": "Correlation dimension (D2)",
-    "PPE": "Pitch Period Entropy (PPE)",
+    "PPE": "Pitch Period Entropy (PPE)"
 }
 
 
 @st.cache_resource
 def load_common_assets():
-    try:
-        scaler_path = MODELS_DIR / 'scaler.pkl'
-        selector_path = MODELS_DIR / 'selector.pkl' 
-        features_path = MODELS_DIR / 'feature_names.json'
-
-        if not scaler_path.exists() or not selector_path.exists() or not features_path.exists():
-            st.error(f"Actifs communs (scaler, selector, feature_names) non trouvés dans '{MODELS_DIR}'. Exécutez train.py.")
-            return None, None, None
-
-        scaler = joblib.load(scaler_path)
-        selector_trained = joblib.load(selector_path) 
-        with open(features_path, 'r') as f:
-            feature_names = json.load(f)
-        
-        return scaler, selector_trained, feature_names
-    except Exception as e:
-        st.error(f"Erreur lors du chargement des actifs communs : {e}")
+    scaler_path = MODELS_DIR / 'scaler.pkl'
+    selector_path = MODELS_DIR / 'selector.pkl'
+    features_path = MODELS_DIR / 'feature_names.json'
+    if not scaler_path.exists() or not selector_path.exists() or not features_path.exists():
+        st.error(f"Actifs communs (scaler, selector, feature_names) non trouvés dans '{MODELS_DIR}'. Exécutez train.py.")
         return None, None, None
+    scaler = joblib.load(scaler_path)
+    selector = joblib.load(selector_path)
+    with open(features_path, 'r') as f:
+        feature_names = json.load(f)
+    return scaler, selector, feature_names
 
 @st.cache_resource
 def load_predictive_model(model_key: str):
@@ -202,6 +189,14 @@ def app():
                 app_config.update(current_config_to_save)
             except Exception as e:
                  st.sidebar.error(f"Erreur sauvegarde config : {e}")
+
+        st.sidebar.button("🔄 Réinitialiser le formulaire", on_click=lambda: st.session_state.clear())
+        st.sidebar.download_button(
+            label="⬇️ Télécharger un exemple JSON",
+            data='{"MDVP:Fo(Hz)": 119.992, "MDVP:Fhi(Hz)": 157.302, ...}',
+            file_name="exemple_patient.json",
+            mime="application/json"
+        )
 
     st.subheader("⬇️ Entrée des Données Utilisateur")
     input_method = st.radio(
@@ -340,8 +335,8 @@ def display_prediction_results(input_df, model_key, k_best_for_shap, show_shap, 
         
         proba_parkinsons = -1.0 
         if hasattr(model_to_use, 'predict_proba'):
-            proba_all = model_to_use.predict_proba(X_selected_df_for_model)[0]
-            proba_parkinsons = proba_all[1] if len(proba_all) > 1 else proba_all[0] 
+            proba_all = model_to_use.predict_proba(X_selected_df_for_model.values)[0]
+            proba_parkinsons = proba_all[1] if len(proba_all) > 1 else proba_all[0]
 
         status_text = "Risque Élevé de Parkinson Détecté" if pred_encoded == 1 else "Profil Vocal Normal / Faible Risque"
         confidence_text = f"(Probabilité de Parkinson selon le modèle : {proba_parkinsons:.1%})" if proba_parkinsons >= 0 else ""
@@ -365,24 +360,21 @@ def display_prediction_results(input_df, model_key, k_best_for_shap, show_shap, 
 def explain_prediction_shap(model, X_selected_df_single_row, model_features_names, k_best_for_display):
     st.subheader("📊 Influence des variables sur cette prédiction")
     try:
-        # --- DÉBUT DE LA CORRECTION : PASSAGE A LA NOUVELLE API SHAP ---
-        # L'ancienne API (TreeExplainer) peut avoir des comportements inattendus avec certains modèles.
-        # La nouvelle API (shap.Explainer) est plus robuste et recommandée.
-
-        # 1. Créer un "Explainer" unifié.
         explainer = shap.Explainer(model)
-
-        # 2. Obtenir un objet "Explanation" complet.
         shap_explanation = explainer(X_selected_df_single_row)
 
-        # 3. Extraire les valeurs pour la classe positive (classe 1).
-        # Pour un seul échantillon, on prend l'index 0.
-        # Pour la classe 1, on prend le dernier index `..., 1`.
-        shap_values_for_plot = shap_explanation.values[0, :, 1]
+        # Correction : gérer la forme de shap_explanation.values
+        values = shap_explanation.values
+        # Cas classification binaire (2D) : (1, n_features)
+        if values.ndim == 2:
+            shap_values_for_plot = values[0]
+        # Cas multi-classes (3D) : (1, n_features, n_classes)
+        elif values.ndim == 3:
+            shap_values_for_plot = values[0, :, 1]  # classe positive
+        else:
+            st.error(f"Format inattendu des valeurs SHAP : shape={values.shape}")
+            return
 
-        # --- FIN DE LA CORRECTION ---
-
-        # À ce stade, shap_values_for_plot est un tableau 1D avec 10 valeurs, ce qui est correct.
         if len(shap_values_for_plot) != len(model_features_names):
             st.error(f"Erreur critique de dimension SHAP : {len(shap_values_for_plot)} valeurs SHAP pour {len(model_features_names)} features.")
             return
